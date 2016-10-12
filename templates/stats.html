@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>K-Means</title>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+    <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+    <script src="https://code.highcharts.com/modules/data.js"></script>
+</head>
+<body>
+
+<style>
+    .table-hover>tbody>tr:hover>td, .table-hover>tbody>tr:hover>th {
+        background-color: #550055;
+        color:#eeeeee;
+        cursor: pointer;
+    }
+
+    .separator-right {
+        border-right-style: dashed;
+        border-right-color: black;
+        border-right-width: 1px;
+    }
+
+    .separator-left {
+        border-left-style: dashed;
+        border-left-color: black;
+        border-left-width: 1px;
+    }
+
+    button {
+        margin: 1.5em;
+    }
+
+    #button-n {
+        margin: 0;
+    }
+
+    #extraction {
+        visibility: hidden;
+    }
+</style>
+<div class="container">
+    <div id="graph">
+
+    </div>
+    <div class="row" id="separator-top">
+        <div class="col-xs-4">
+            <fieldset class="form-group" id="extraction">
+                <label for="lblExtraction">Extraction des N%</label>
+                <div class="row">
+                    <div class="col-xs-6">
+                        <input type="number" class="form-control" id="input-n" placeholder="Entrer N (0-100)" min="0" max="100">
+                    </div>
+                    <div class="col-xs-3">
+                        <button type="submit" class="btn btn-primary" id="button-n" onclick="extraction()">Valider</button>
+                    </div>
+                    <div class="col-xs-3">
+                        <button type="submit" class="btn btn-info" id="button-n" onclick="reinit()">Réinitialiser</button>
+                    </div>
+                </div>
+                <small class="text-muted">Supprime les points pouvant être non significatifs</small>
+            </fieldset>
+        </div>
+    </div>
+{% for n in names %}
+    <p>{{ n }}</p>
+{% endfor %}
+    <div class="table-responsive">
+        <div class="row">
+            <div class="col-xs-4">
+                <div class="row">
+                    <div class="col-xs-4">
+                        <a href={% url 'index' %}> <button type="button" class="btn btn-primary">Choix dataset</button></a>
+                    </div>
+                    <div class="col-xs-2">
+                        <button type="button" class="btn btn-danger" onclick="kmeans()">K-means</button>
+                    </div>
+                </div>
+            </div>
+            <h2 class="col-xs-4">Spam</h2>
+            <h2 class="col-xs-4">Non Spam</h2>
+        </div>
+        <table class="table table-striped table-hover" id="datatable">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Moyenne</th>
+                    <th>Ecart-type</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Moyenne</th>
+                    <th>Ecart-type</th>
+                </tr>
+            </thead>
+            <tbody>
+            {%  for d in data %}
+                <tr id="{{ d.1.0 }}" class="tr_spam">
+                        <td><input type="checkbox" name="choice" value="{{ d.1.0 }}"> </td>
+                        <td data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.0 }} - {{ d.0 }}</td>
+                        <td class="spam separator-left" data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.1}}</td>
+                        <td class="spam" data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.2 }}</td>
+                        <td class="spam" data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.3 }}</td>
+                        <td class="spam separator-right" data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.4 }}</td>
+                        <td class="no_spam" data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.5 }}</td>
+                        <td class="no_spam" data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.6 }}</td>
+                        <td class="no_spam" data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.7 }}</td>
+                        <td class="no_spam" data-toggle="modal" data-target="#modal_stats" onclick="row_clicked({{ d.1.1 }}, {{ d.1.2 }}, {{ d.1.3 }}, {{ d.1.4 }}, {{ d.1.5 }}, {{ d.1.6 }}, {{ d.1.7 }}, {{ d.1.8 }}, '{{ d.0 }}')">{{ d.1.8 }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Moyenne</th>
+                    <th>Ecart-type</th>
+                    <th>Min</th>
+                    <th>Max</th>
+                    <th>Moyenne</th>
+                    <th>Ecart-type</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="modal fade" id="modal_stats" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="min-width: 400px; height: 500px; margin: 0 auto">
+        <div class="modal-dialog">
+            <div class="modal-content modal-popup">
+                <div id="container_charts"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function reinit() {
+        var champs = new Array();
+        $('input:checked[name=choice]').each(function(){
+            var t = $(this).val();
+            champs.push(t);
+        })
+        if (champs.length == 2) {
+            $.ajax({
+                url : 'http://127.0.0.1:8000/reinit/', // La ressource ciblée,
+                type : 'GET', // Le type de la requête HTTP.
+                success: function(data) {
+                    $('#graph').html(data);
+                    $('#container').load();
+                }
+            });
+        } else if (champs.length == 3){
+            $.ajax({
+                url : 'http://127.0.0.1:8000/reinit/', // La ressource ciblée
+                type : 'GET', // Le type de la requête HTTP.
+                success: function(data) {
+                    $('#graph').html(data);
+                    $('#container').load();
+                }
+            });
+        }
+    }
+
+    function extraction() {
+        var N = $("#input-n").val();
+        if (N < 0 || N > 100) {
+            alert("Veuillez choisir une valeur entre 0 et 100");
+        } else{
+            var champs = new Array();
+            $('input:checked[name=choice]').each(function(){
+                var t = $(this).val();
+                champs.push(t);
+            })
+            if (champs.length == 2) {
+                alert("Extraction des "+N+"% pour chaque cluster");
+                $.ajax({
+                    url : 'http://127.0.0.1:8000/extraction/', // La ressource ciblée,
+                    type : 'GET', // Le type de la requête HTTP.
+                    data : 'nb=' + champs.length + "&N="+ N,
+                    success: function(data) {
+                        $('#graph').html(data);
+                        $('#container').load();
+                    }
+                });
+            } else if (champs.length == 3){
+                alert("Extraction des "+N+"% pour chaque cluster");
+                $.ajax({
+                    url : 'http://127.0.0.1:8000/extraction/', // La ressource ciblée
+                    type : 'GET', // Le type de la requête HTTP.
+                    data : 'nb=' + champs.length + "&N="+ N,
+                    success: function(data) {
+                        $('#graph').html(data);
+                        $('#container').load();
+                    }
+                });
+            }
+        }
+    }
+
+    function kmeans(){
+        var champs = new Array();
+        compteur = 0;
+        $('input:checked[name=choice]').each(function(){
+            var t = $(this).val();
+            champs.push(t);
+        });
+        if (champs.length == 2) {
+            $.ajax({
+                url : 'http://127.0.0.1:8000/kmeans/', // La ressource ciblée,
+                type : 'GET', // Le type de la requête HTTP.
+                data : 'nb=' + champs.length + '&champs1=' + champs[0] + '&champs2=' + champs[1],
+                success: function(data) {
+                    $('#graph').html(data);
+                    $('#container').load();
+                }
+            });
+        } else if (champs.length == 3){
+            $.ajax({
+                url : 'http://127.0.0.1:8000/kmeans/', // La ressource ciblée
+                type : 'GET', // Le type de la requête HTTP.
+                data : 'nb=' + champs.length + '&champs1=' + champs[0] + '&champs2=' + champs[1] + '&champs3=' + champs[2],
+                success: function(data) {
+                    $('#graph').html(data);
+                    $('#container').load();
+                }
+            });
+        } else {
+            alert('Veuillez saisir 2 ou 3 champs pour le calcul du K-Means');
+        }
+    }
+
+
+    function row_clicked(min1, max1, avg1, std1, min2, max2, avg2, std2, title) {
+        var spam = [min1, max1, avg1, std1];
+        var no_spam = [min2, max2, avg2, std2];
+
+        /**
+         * Grid-light theme for Highcharts JS
+         * @author Torstein Honsi
+         */
+
+// Load the fonts
+        Highcharts.createElement('link', {
+            href: '//fonts.googleapis.com/css?family=Dosis:400,600',
+            rel: 'stylesheet',
+            type: 'text/css'
+        }, null, document.getElementsByTagName('head')[0]);
+
+            $('#container_charts').highcharts({
+                chart: {
+                    type: 'column'
+                },
+                title: {
+                    text: 'Statistiques normalisées: '+ title
+                },
+                subtitle: {
+                    text: 'Source: Spambase Hewlett Packard'
+                },
+                xAxis: {
+                    categories: [
+                        'Min',
+                        'Max',
+                        'Moyenne',
+                        'Ecart-type'
+                    ],
+                    crosshair: true
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'Pourcentage'
+                    }
+                },
+                tooltip: {
+                    headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+                    pointFormat: '<tr><td style="color:{series.color};padding:0">{series.name}: </td>' +
+                    '<td style="padding:0"><b>{point.y:.3f}</b></td></tr>',
+                    footerFormat: '</table>',
+                    shared: true,
+                    useHTML: true
+                },
+                plotOptions: {
+                    column: {
+                        pointPadding: 0.2,
+                        borderWidth: 0
+                    }
+                },
+                series: [{
+                    name: 'Spam',
+                    data: spam
+
+                }, {
+                    name: 'Non spam',
+                    data: no_spam
+
+                }]
+            });
+    }
+
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,254 @@
+
+<div onload="graph({{ k }},{{ centroids }}, {{ clusters }}, {{ spams }}, {{ no_spams }}, {{ nomChamps }})" id="container" style=" height: 500px;
+    min-width: 400px;
+    max-width: 800px;
+    margin: 0 auto;">
+</div>
+
+<script>
+    function graph(k, centroids, clusters, spams, no_spams, nomChamps) {
+        var taille = clusters[0].length + clusters[1].length;
+        alert("Il y a "+ taille + " valeurs");
+
+        if (k == 3) {
+            $(function () {
+
+                // Give the points a 3D feel by adding a radial gradient
+                Highcharts.getOptions().colors = $.map(Highcharts.getOptions().colors, function (color) {
+                    return {
+                        radialGradient: {
+                            cx: 0.4,
+                            cy: 0.3,
+                            r: 0.5
+                        },
+                        stops: [
+                            [0, color],
+                            [1, Highcharts.Color(color).brighten(-0.2).get('rgb')]
+                        ]
+                    };
+                });
+
+                // Set up the chart
+                var chart = new Highcharts.Chart({
+                    chart: {
+                        renderTo: 'container',
+                        margin: 100,
+                        type: 'scatter',
+                        options3d: {
+                            enabled: true,
+                            alpha: 10,
+                            beta: 30,
+                            depth: 250,
+                            viewDistance: 5,
+                            fitToPlot: false,
+                            frame: {
+                                bottom: { size: 1, color: 'rgba(0,0,0,0.02)' },
+                                back: { size: 1, color: 'rgba(0,0,0,0.04)' },
+                                side: { size: 1, color: 'rgba(0,0,0,0.06)' }
+                            }
+                        }
+                    },
+                    title: {
+                        text: 'Clusters en fonction des champs séléctionnés'
+                    },
+                    subtitle: {
+                        text: 'Source: Spambase Hewlett Packard'
+                    },
+                    plotOptions: {
+                        scatter: {
+                            marker: {
+                                radius: 3
+                            },
+                            width: 10,
+                            height: 10,
+                            depth: 10
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            enabled: true,
+                            text: nomChamps[1]
+                        },
+                        max: 6,
+                        min: 0
+                    },
+                    xAxis: {
+                        title: {
+                            enabled: true,
+                            text: nomChamps[0]
+                        },
+                        max: 6,
+                        min: 0
+                    },
+                    zAxis: {
+                        title: {
+                            enabled: true,
+                            text: nomChamps[2]
+                        },
+                        max: 6,
+                        min: 0
+                    },
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle',
+                        floating: true,
+                        backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF',
+                        borderWidth: 1
+                    },
+                    series: [{
+                        name: 'Spam',
+                        colorByPoint: false,
+                        color: 'rgba(120, 176, 228, 0.3)',
+                        data: spams,
+                    }, {
+                        name: 'Non Spam',
+                        colorByPoint: false,
+                        color: 'rgba(41, 41, 46, 0.3)',
+                        data: no_spams
+                    }, {
+                        name: 'Cluster 1',
+                        colorByPoint: false,
+                        color: 'rgba(133, 221, 117, 0.6)',
+                        data: clusters[0],
+                    }, {
+                        name: 'Cluster 2',
+                        colorByPoint: false,
+                        color: 'rgba(232, 150, 85, 0.6)',
+                        data: clusters[1]
+                    }, {
+                        name: 'Centroid 1',
+                        colorByPoint: false,
+                        color: 'rgba(110, 117, 211, 1)',
+                        data: [centroids[0]]
+                    }, {
+                        name: 'Centroid 2',
+                        colorByPoint: false,
+                        color: 'rgba(226, 81, 116, 1)',
+                        data: [centroids[1]]
+                    }]
+                });
+
+
+                // Add mouse events for rotation
+                $(chart.container).bind('mousedown.hc touchstart.hc', function (eStart) {
+                    eStart = chart.pointer.normalize(eStart);
+
+                    var posX = eStart.pageX,
+                            posY = eStart.pageY,
+                            alpha = chart.options.chart.options3d.alpha,
+                            beta = chart.options.chart.options3d.beta,
+                            newAlpha,
+                            newBeta,
+                            sensitivity = 5; // lower is more sensitive
+
+                    $(document).bind({
+                        'mousemove.hc touchdrag.hc': function (e) {
+                            // Run beta
+                            newBeta = beta + (posX - e.pageX) / sensitivity;
+                            chart.options.chart.options3d.beta = newBeta;
+
+                            // Run alpha
+                            newAlpha = alpha + (e.pageY - posY) / sensitivity;
+                            chart.options.chart.options3d.alpha = newAlpha;
+
+                            chart.redraw(false);
+                        },
+                        'mouseup touchend': function () {
+                            $(document).unbind('.hc');
+                        }
+                    });
+                });
+
+            });
+        } else {
+            $(function () {
+                $('#container').highcharts({
+                    chart: {
+                        type: 'scatter',
+                        zoomType: 'xy'
+                    },
+                    title: {
+                        text: 'Clusters en fonction des champs séléctionnés'
+                    },
+                    subtitle: {
+                        text: 'Source: Spambase Hewlett Packard'
+                    },
+                    xAxis: {
+                        title: {
+                            enabled: true,
+                            text: nomChamps[0]
+                        },
+                    },
+                    yAxis: {
+                        title: {
+                            enabled: true,
+                            text: nomChamps[1]
+                        },
+                    },
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle',
+                        floating: true,
+                        backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColor) || '#FFFFFF',
+                        borderWidth: 1
+                    },
+                    plotOptions: {
+                        scatter: {
+                            marker: {
+                                radius: 4,
+                                states: {
+                                    hover: {
+                                        enabled: true,
+                                        lineColor: 'rgb(100,100,100)'
+                                    }
+                                }
+                            },
+                            states: {
+                                hover: {
+                                    marker: {
+                                        enabled: true
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                headerFormat: '<b>{series.name}</b><br>',
+                                pointFormat: '{point.x}, {point.y}'
+                            }
+                        }
+                    },
+                    series: [{
+                        name: 'Spams',
+                        color: 'rgba(120, 176, 228, 0.3)',
+                        data: spams
+                    }, {
+                        name: 'Non Spams',
+                        color: 'rgba(41, 41, 46, 0.3)',
+                        data: no_spams
+                    },{
+                        name: 'Cluster 1',
+                        color: 'rgba(133, 221, 117, 0.6)',
+                        data: clusters[0]
+
+                    }, {
+                        name: 'Cluster 2',
+                        color: 'rgba(232, 150, 85, 0.6)',
+                        data: clusters[1]
+                    }, {
+                        name: 'Centroid 1',
+                        color: 'rgba(110, 117, 211, 1)',
+                        data: [centroids[0]]
+                    }, {
+                        name: 'Centroid 2',
+                        color: 'rgba(226, 81, 116, 1)',
+                        data: [centroids[1]]
+                    }]
+                });
+            });
+        }
+        $('#separator-top').css('margin-top', '3em');
+        $('#extraction').css('visibility', 'visible');
+    }
+
+</script>
